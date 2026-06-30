@@ -1,0 +1,201 @@
+﻿<?php
+session_start();
+include_once('./function.php');
+$objCon = connectDB();
+if (!isset($_SESSION['user_login']) || empty($_SESSION['user_login']['status'])) {
+    echo '<script>alert("ลงชื่อเข้าใช้งานก่อน");window.location="./";</script>';
+    exit;
+}
+$user = $_SESSION['user_login'];
+if ($user['status'] == '') {
+    echo '<script>alert("ลงชื่อเข้าใช้งานก่อน");window.location="./";</script>';
+    exit;
+}
+
+if (empty($_GET['ref'])) {
+    echo '<script>alert("ข้อมูลการจองไม่ถูกต้อง");window.location="./";</script>';
+    exit;
+}
+$id = $_GET['ref'];
+$strSQL = "SELECT * FROM bookingRoom LEFT JOIN user ON bookingRoom.U_id=user.U_id WHERE id = '$id'";
+$strSQL2 = "SELECT * FROM bookingRoom LEFT JOIN user ON bookingRoom.admin_update=user.U_id WHERE id = '$id'";
+
+$objQuery = mysqli_query($objCon, $strSQL);
+$objResult = mysqli_fetch_array($objQuery, MYSQLI_ASSOC);
+$objQuery2 = mysqli_query($objCon, $strSQL2);
+$objResult2 = mysqli_fetch_array($objQuery2, MYSQLI_ASSOC);
+
+if ($objResult == null) {
+    echo '<script>alert("ไม่พบข้อมูล!!");window.location="./";</script>';
+    exit;
+}
+
+
+$pagename = 'อัพเดทข้อมูลการจอง';
+require 'header.php';
+require 'Sidebar.php';
+if ($objResult['B_status'] == 'Suspend') {
+    $status1 =
+        "<div class='btn btn-warning btn-lg'>" .
+        "<i class='fa fa-remove pr-2'></i> รออนุมัติ</div>";
+} elseif ($objResult['B_status'] == 'reject') {
+    $status1 =
+        "<button class='btn btn-danger btn-lg'>" .
+        "<i class='fa fa-remove pr-2'></i> ยกเลิก</button>";
+    $st = "<br><button type='button' class='btn btn-danger btn-sm'>ยกเลิกแล้ว</button>";
+} elseif ($objResult['B_status'] == 'accept') {
+    $status1 =
+        "<button class='btn btn-success btn-lg'>" .
+        "<i class='fa fa-check pr-2'></i> อนุมัติแล้ว </button>";
+} else {
+    $status1 =
+        "<button class='btn btn-primary btn-lg'>" .
+        "<i class='fa fa-refresh pr-2'></i>  อนุมัติ / รอใช้</button>";
+}
+// Default value for $disabled and $hidden
+$disabled = '';
+$hidden = '';
+
+// Conditionally set the values
+if ($objResult['B_status'] != 'Suspend' && $user['status'] != 'admin_1') {
+    $disabled = 'disabled';
+    $hidden = 'hidden';
+}
+
+
+// ตรวจสอบสิทธิ์ผู้ใช้
+$canEdit = ($user['status'] == 'admin_1' || $user['U_id'] == $objResult['U_id']);
+$canApprove = ($user['status'] == 'admin_1');
+$disabled = $canEdit ? '' : 'disabled';
+
+// ฟังก์ชันแปลงวันเวลา
+function formatDate($datetime) {
+    return date('d/m/Y H:i', strtotime($datetime));
+}
+
+// แปลงวันเวลา
+$startFormatted = formatDate($objResult['start']);
+$endFormatted = formatDate($objResult['end']);
+?>
+
+<main id="main" class="main">
+    <!-- Page Title -->
+    <div class="pagetitle">
+        <h1>อัพเดทข้อมูลการจอง</h1>
+        <nav>
+            <ol class="breadcrumb">
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Section -->
+<section class="section dashboard">
+    <div class="row">
+        <div class="col-sm-9 mb-3 mb-sm-0">
+            <div class="card">
+                <div class="card-body">
+                    <form action="booking_action_update.php" id="form_update" method="post" enctype="multipart/form-data">
+                        <div class="col-md-9">
+                            <div class="row mt-3">
+                                <!-- แถวที่ 1 -->
+                                <div class="row-md-3">
+                                    <label for="title" class="form-label">หัวข้อประชุม</label>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon3">เรื่อง</span>
+                                        <input type="text" id="title" name="title" class="form-control" <?php echo $canEdit ? '' : 'disabled'; ?> value="<?php echo $objResult['title']; ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <label for="start" class="form-label">วันเวลาเริ่มต้น</label>
+                                    <input type="datetime-local" id="lname" name="start" class="form-control" value="<?php echo $objResult['start']; ?>" <?php echo $disabled; ?>>
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <label for="end" class="form-label">วันเวลาสิ้นสุด</label>
+                                    <input type="datetime-local" id="end" name="end" class="form-control" value="<?php echo $objResult['end']; ?>" <?php echo $disabled; ?>>
+                                </div>
+<div class="col-md-4 mt-3">
+    <label for="persion" class="form-label">จำนวนคน</label>
+    <div class="input-group col-sm-2">
+        <select class="form-select" id="persion" name="persion" <?php echo $canEdit ? '' : 'disabled'; ?> required>
+            <?php 
+            for ($x = 1; $x <= 25; $x++) {
+                // ตรวจสอบเพื่อให้ค่าเริ่มต้นตรงกับค่าจากฐานข้อมูล
+                $selected = ($objResult['persion'] == $x) ? 'selected' : '';
+                echo "<option value=\"$x\" $selected>$x</option>";
+            } 
+            ?>
+        </select>
+        <span class="input-group-text" id="basic-addon2">คน</span>
+    </div>
+</div>
+                                <div class="col-md-8 mt-3">
+                                    <label for="org" class="form-label">หน่วยงาน</label>
+                                    <input type="text" id="org" name="org" class="form-control" value="<?php echo $objResult['org']; ?>" disabled>
+                                </div>
+<div class="col-md-6 mt-3">
+    <label for="user" class="form-label">ผู้จอง</label>
+    <input type="text" id="uid" name="fame" class="form-control" value="<?php echo $objResult['fname'] . ' ' . $objResult['lname']; ?>" disabled>
+</div>
+
+<?php
+// เปลี่ยนค่าในเงื่อนไขการตรวจสอบ
+$isAdmin = $user['status'] === 'admin_1';
+$isBookingOwner = $_SESSION['user_login']['U_id'] === $objResult['U_id']; // ใช้ U_id แทนชื่อเต็ม
+?>
+
+<div class="col-md-6 mt-3">
+    <label for="status" class="form-label">สถานะการจอง</label>
+    <select class="form-select" id="B_status" name="B_status">
+        <?php if ($isAdmin): ?>
+            <option value="Suspend" <?php echo $objResult['B_status'] == 'Suspend' ? 'selected' : ''; ?>>รออนุมัติ</option>
+            <option value="accept" <?php echo $objResult['B_status'] == 'accept' ? 'selected' : ''; ?>>อนุมัติ</option>
+            <option value="reject" <?php echo $objResult['B_status'] == 'reject' ? 'selected' : ''; ?>>ยกเลิก</option>
+        <?php elseif ($isBookingOwner): ?>
+            <option value="Suspend" <?php echo $objResult['B_status'] == 'Suspend' ? 'selected' : ''; ?>>รออนุมัติ</option>
+            <option value="reject" <?php echo $objResult['B_status'] == 'reject' ? 'selected' : ''; ?>>ยกเลิก</option>
+        <?php endif; ?>
+    </select>
+</div>
+
+<!-- ทำให้ "หมายเหตุ" ขึ้นบรรทัดใหม่ -->
+<div class="col-12 mt-3">
+    <label for="remark" class="form-label">หมายเหตุ:</label>
+    <input type="text" class="form-control" name="remark" value="<?php echo $objResult['remark']; ?>">
+</div>
+
+                                <!-- Hidden Inputs -->
+                                <input hidden type="text" name="uid" value="<?php echo $objResult['U_id']; ?>">
+                                <input hidden type="text" name="id" value="<?php echo $objResult['id']; ?>">
+                                <!-- ปุ่มบันทึก -->
+                                <div class="col-md-12 mt-3">
+                                    <button type="submit" class="btn btn-primary btn-sm" <?php echo $canEdit ? '' : 'disabled'; ?>>บันทึกการแก้ไข</button>
+                                    <a href="booking_list.php" class="btn btn-outline-primary btn-sm">กลับ</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Status Card -->
+        <div class="col-sm-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">สถานะการจองปัจจุบัน</h5>
+                    <?php echo $status1; ?>
+                    <p style="font-size: 15px;">
+                        <?php echo 'Update: ' . $objResult['date_update']; ?><br>
+                        <?php echo 'by: ' . $objResult2['fname'] . ' ' . $objResult2['lname']; ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+<!-- End #main -->
+
+<?php require 'footer.php' ?>
+
+</html>

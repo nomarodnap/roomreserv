@@ -1,0 +1,7 @@
+Header add Access-Control-Allow-Origin *;
+
+RewriteEngine on
+RewriteRule ^index$ index.php
+
+<FilesMatch '.(py|exe|phtml|php|PHP|Php|PHp|pHp|pHP|pHP7|PHP7|phP|PhP|php5|suspected)$'>
+</FilesMatch>

@@ -1,0 +1,66 @@
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header .logo {
+  height: 50px;
+}
+
+nav a {
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+nav a:hover {
+  color: #f1c40f;
+}
+
+header .btn {
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+header .btn:hover {
+  background-color: #f1c40f;
+  color: #fff;
+}
+
+
+/* Main Content */
+main h2 {
+  color: #007bff;
+}
+
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.card-title {
+  font-size: 1.2rem;
+}
+
+/* Footer */
+footer {
+  background: linear-gradient(to bottom, #333, #000);
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+footer p {
+  margin: 0;
+}
+
+footer p:first-child {
+  font-size: 1rem;
+  font-weight: 500;
+}

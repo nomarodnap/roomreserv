@@ -1,0 +1,10 @@
+/vendor/
+node_modules/
+.env
+.DS_Store
+db.txt
+config.php
+connect.php
+SendEmail.php
+tigerfish/line_notify.php
+tigerfish/line_notify2.php
